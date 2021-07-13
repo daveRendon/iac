@@ -1,0 +1,25 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "functions": [],
+    "variables": {
+        "sku": "F1"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2020-06-01",
+            "name": "[variables('appServicePlanPortalName')]",
+            "location": "[parameters('location')]",
+            "sku": {
+                "name": "[variables('sku')]"
+            },
+            "kind": "linux",
+            "properties": {
+                "reserved": true
+            }
+        }
+    ],
+    "outputs": {}
+}
