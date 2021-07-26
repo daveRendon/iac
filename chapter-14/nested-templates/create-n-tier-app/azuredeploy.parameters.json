@@ -9,11 +9,8 @@
       "webAppName": {
         "value": "ifabrik"
       },
-      "linuxFxVersion": {
-        "value": "DOTNETCORE|3.0"
-      },
-      "repoUrl": {
-        "value": " "
+      "appServicePlan_name": {
+          "value": "AppServicePlan-ifabrik"
       }
     }
   }

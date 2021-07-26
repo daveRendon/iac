@@ -1,46 +1,30 @@
 {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/subscriptionDeploymentTemplate.json#",
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
         "location": {
             "type": "string",
-            "defaultValue": "eastus",
-            "metadata": {
-                "description": "Location"
-            }
+            "defaultValue": "eastus"
         },
         "webAppName": {
             "type": "string",
             "defaultValue": "[concat('webApp-')]",
-            "minLength": 2,
-            "metadata": {
-                "description": "Web app name."
-            }
+            "minLength": 2
         },
-        "linuxFxVersion": {
+        "appServicePlan_name": {
             "type": "string",
-            "defaultValue": "DOTNETCORE|3.0",
-            "metadata": {
-                "description": "The Runtime stack of current web app"
-            }
-        },
-        "repoUrl": {
-            "type": "string",
-            "defaultValue": " ",
-            "metadata": {
-                "description": "Optional Git Repo URL"
-            }
+            "defaultValue": "AppServicePlan-ifabrik"
         }
-
     },
-    "functions": [],
     "variables": {
         "sku": "F1",
+        "linuxFxVersion": "DOTNETCORE|3.0",
         "appServicePlanPortalName": "[concat('AppServicePlan-', parameters('webAppName'))]",
-        "resourceGroupName1": "iFabrik-rg-0",
-        "resourceGroupName2": "iFabrik-rg-1"
+        "resourceGroupName1": "ifabrik-rg-0",
+        "resourceGroupName2": "ifabrik-rg-1"
     },
     "resources": [
+        //Resource Groups
         {
             "name": "resourceGroups",
             "type": "Microsoft.Resources/deployments",
@@ -56,11 +40,8 @@
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/subscriptionDeploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {
-
-                    },
                     "variables": {
-                        "resourceGroupName": "iFabrik-rg-"
+                        "resourceGroupName": "ifabrik-rg-"
                     },
                     "resources": [
                         {
@@ -101,13 +82,9 @@
                     "scope": "outer"
                 },
                 "mode": "Incremental",
-                "parameters": {
-                },
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
                     "resources": [
                         {
                             "type": "Microsoft.Web/serverfarms",
@@ -124,66 +101,42 @@
                         }
                     ],
                     "outputs": {
-                        "hostingPlan": {
+                        "appServicePlan": {
                             "type": "string",
-                            "value": "value"
+                            "value": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
                         }
                     }
                 }
             }
         },
-         //Nested template: App Service 
+        //App Service
+        //Nested template: App Service
         {
             "name": "appService",
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2020-10-01",
             "resourceGroup": "[variables('resourceGroupName2')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Resources/deployments', 'resourceGroups')]",
-                "[resourceId('Microsoft.Resources/deployments', 'appServicePlan')]"
+                "[resourceId('Microsoft.Resources/deployments', 'resourceGroups')]"
             ],
             "properties": {
+                "mode": "Incremental",
                 "expressionEvaluationOptions": {
                     "scope": "outer"
-                },
-                "mode": "Incremental",
-                "parameters": {
-
-                },
+                },        
                 "template": {
                     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
                     "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
+                   
                     "resources": [
                         {
-                            "type": "Microsoft.Web/sites",
-                            "apiVersion": "2020-06-01",
                             "name": "[parameters('webAppName')]",
-                            "location": "[parameters('location')]",
-
+                            "type": "Microsoft.Web/sites",
+                            "apiVersion": "2018-11-01",
+                            "location": "eastus",
                             "properties": {
-                                "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]",
-                                "siteConfig": {
-                                    "linuxFxVersion": "[parameters('linuxFxVersion')]"
-                                },
-                                "resources": [
-                                    {
-                                        "condition": "[contains(parameters('repoUrl'),'http')]",
-                                        "type": "sourcecontrols",
-                                        "apiVersion": "2020-06-01",
-                                        "name": "web",
-                                        "location": "[parameters('location')]",
-                                        "dependsOn": [
-                                            "[resourceId('Microsoft.Web/sites', parameters('webAppName'))]"
-                                        ],
-                                        "properties": {
-                                            "repoUrl": "[parameters('repoUrl')]",
-                                            "branch": "master",
-                                            "isManualIntegration": true
-                                        }
-                                    }
-                                ]
+                                "name": "[concat(parameters('webAppName'))]",
+                                "serverFarmdId": "[parameters('appServicePlan_name')]"
                             }
                         }
                     ],
@@ -191,8 +144,6 @@
                 }
             }
         }
-       
-
     ],
     "outputs": {
         "resourceGroups": {
@@ -201,6 +152,10 @@
                 "count": 1,
                 "input": "[reference('resourceGroups').outputs.resourceGroupsList.value]"
             }
+        },
+        "appServicePlan": {
+            "type": "string",
+            "value": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanPortalName'))]"
         }
     }
 }
